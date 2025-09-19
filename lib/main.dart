@@ -3,6 +3,56 @@ import 'package:workmanager/workmanager.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
+
+class BackgroundTaskManager {
+  static const platform = MethodChannel('background_upload');
+
+  static Future<void> startBackgroundTask() async {
+    if (Platform.isIOS) {
+      try {
+        await platform.invokeMethod('startBackgroundTask');
+      } catch (e) {
+        print('Error starting iOS background task: $e');
+      }
+    } else {
+      // Android - usar workmanager
+      Workmanager().cancelAll();
+      Workmanager().registerOneOffTask(
+        "message-task",
+        "messageTask",
+        initialDelay: Duration(seconds: 30),
+        inputData: <String, dynamic>{
+          "message": "Enviando mensagem...",
+        },
+      );
+    }
+  }
+
+  static Future<void> startBackgroundUpload(String url, String filePath) async {
+    if (Platform.isIOS) {
+      try {
+        await platform.invokeMethod('startBackgroundUpload', {
+          'url': url,
+          'filePath': filePath,
+        });
+      } catch (e) {
+        print('Error starting iOS background upload: $e');
+      }
+    } else {
+      // Android - implementar upload via workmanager
+      Workmanager().registerOneOffTask(
+        "upload-task",
+        "uploadTask",
+        inputData: <String, dynamic>{
+          "url": url,
+          "filePath": filePath,
+        },
+      );
+    }
+  }
+}
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -101,10 +151,13 @@ void main() async {
     sound: true,
   );
 
-  Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: true,
-  );
+  // Initialize workmanager only on Android
+  if (Platform.isAndroid) {
+    Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: true,
+    );
+  }
 
   runApp(const MyApp());
 }
@@ -162,21 +215,29 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _status = "Workmanager não iniciado";
 
-  void _startMessageTask() {
-    // Cancel all previous tasks first
-    Workmanager().cancelAll();
-
-    // Register new task
-    Workmanager().registerOneOffTask(
-      "message-task",
-      "messageTask",
-      initialDelay: Duration(seconds: 30),
-      inputData: <String, dynamic>{
-        "message": "Enviando mensagem...",
-      },
-    );
+  void _startMessageTask() async {
+    await BackgroundTaskManager.startBackgroundTask();
     setState(() {
-      _status = "Task de mensagem iniciada!";
+      if (Platform.isIOS) {
+        _status = "Background task agendada para iOS! (BGTaskScheduler)";
+      } else {
+        _status = "Task de mensagem iniciada no Android!";
+      }
+    });
+  }
+
+  void _startUploadTask() async {
+    // Exemplo de upload de arquivo - você precisará de um arquivo real
+    const testUrl = "https://httpbin.org/post";
+    const testFilePath = "/path/to/test/file.txt"; // Substituir por caminho real
+
+    await BackgroundTaskManager.startBackgroundUpload(testUrl, testFilePath);
+    setState(() {
+      if (Platform.isIOS) {
+        _status = "Background upload iniciado no iOS! (URLSession)";
+      } else {
+        _status = "Upload task iniciada no Android!";
+      }
     });
   }
 
@@ -193,7 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'Teste do Workmanager',
+              'Background Tasks Test',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -210,7 +271,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Enviar Mensagem'),
+              child: const Text('Background Task'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _startUploadTask,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 50),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Background Upload'),
             ),
             const SizedBox(height: 40),
             const Card(
@@ -224,10 +295,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
-                    Text('1. Clique em "Enviar Mensagem"'),
-                    Text('2. Aguarde 5 segundos'),
-                    Text('3. A notificação "Enviando mensagem..." aparecerá'),
-                    Text('4. Funciona mesmo com o app fechado'),
+                    Text('• Android: Workmanager'),
+                    Text('• iOS: BGTaskScheduler + URLSession'),
+                    Text('• Background Task: Executa notificação'),
+                    Text('• Background Upload: Para arquivos reais'),
+                    Text('• Funciona mesmo com app fechado'),
                   ],
                 ),
               ),

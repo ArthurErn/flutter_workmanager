@@ -52,8 +52,8 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER).workmanager.background.task</string>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER).workmanager.background.periodic</string>
+		<string>com.workmanager.background.task</string>
+		<string>com.workmanager.background.upload</string>
 	</array>
 </dict>
 </plist>
