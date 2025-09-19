@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(fvm flutter pub get:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
