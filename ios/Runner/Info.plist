@@ -50,5 +50,10 @@
 		<string>background-fetch</string>
 		<string>background-processing</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).workmanager.background.task</string>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).workmanager.background.periodic</string>
+	</array>
 </dict>
 </plist>
