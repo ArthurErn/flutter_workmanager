@@ -103,7 +103,7 @@ void main() async {
 
   Workmanager().initialize(
     callbackDispatcher,
-    isInDebugMode: false,
+    isInDebugMode: true,
   );
 
   runApp(const MyApp());
@@ -163,8 +163,12 @@ class _MyHomePageState extends State<MyHomePage> {
   String _status = "Workmanager não iniciado";
 
   void _startMessageTask() {
+    // Cancel all previous tasks first
+    Workmanager().cancelAll();
+
+    // Register new task
     Workmanager().registerOneOffTask(
-      "message-task-${DateTime.now().millisecondsSinceEpoch}",
+      "message-task",
       "messageTask",
       initialDelay: Duration(seconds: 30),
       inputData: <String, dynamic>{

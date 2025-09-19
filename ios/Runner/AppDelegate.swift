@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import UserNotifications
+import workmanager
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -15,6 +16,12 @@ import UserNotifications
     }
 
     GeneratedPluginRegistrant.register(with: self)
+
+    // Add this to handle workmanager initialization
+    WorkmanagerPlugin.setPluginRegistrantCallback { registry in
+        GeneratedPluginRegistrant.register(with: registry)
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 }
